@@ -51,6 +51,22 @@ class GBOARD {
     OnClickBoard(id);
   }
 }
+
+class MoveInfo {
+  constructor () {
+    this.turn = 0;
+    this.pos = 0;
+    this.flips = 0;
+    this.disc = new Array(20);
+  }
+  clear() {
+    this.turn = 0;
+    this.pos = 0;
+    this.flips = 0;
+  }
+  addFlipDisc(p) {this.disc[this.flips++] = p;}
+}
+
 const VECT = [-10, -9, -8, -1, 1, 8, 9, 10];
 class Othello {
   constructor () {
@@ -66,6 +82,9 @@ class Othello {
     this.bd[this.pos(3, 4)] = 2;
     this.bd[this.pos(4, 4)] = 1;
     
+    this.moveinfo = new Array(60);
+    this.mp = 0;
+    this.mpmax = 0;
     
     this.turn = 1;
   }
@@ -82,6 +101,7 @@ class Othello {
     if (this.bd [p] !=0) {//空きマスがなければ
       return 0;　　// 打てない
     }
+    let moveinfo = new MoveInfo();
     let flipdiscs = 0;
     let oppdisc = this.turn == 2 ? 1:2;
     for (let v=0; v<VECT.length; v++) {　// 8方向全てについて
@@ -96,23 +116,92 @@ class Othello {
       if (flip > 0 && this.bd[n] == this.turn) {
         for (let i=0; i<flip; i++) {
           this.bd[n -= vect] = this.turn;
+          moveinfo.addFlipDisc(n);
         }
         flipdiscs += flip;
       }
     }
     if (flipdiscs　> 0) {
       this.bd[p] = this.turn;
+      
+      moveinfo.pos = p;
+      moveinfo.turn = this.turn;
+      this.moveinfo[this.mp++] = moveinfo;
+      this.mpmax = this.mp;
+      
       this.SetNextTurn();
     }
     return flipdiscs;
   }
   SetNextTurn () {
     this.turn = this.turn == 2 ? 1:2;
+    if (this.isPass(this.turn)) {
+      this.turn = this.turn == 2 ? 1:2;
+      if(this.isPass(this.turn)) {
+        this.turn = 0;
+      }
+    }
   }
+  isPass (turn) {
+    for(let y=0; y<8; y++) {
+      for(let x=0; x<8; x++) {
+        if(this.canMove(x, y, turn)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+   canMove (x, y, turn) {
+    let p = this.pos(x, y);
+    if (this.bd [p] !=0) {//空きマスがなければ
+      return false;　　// 打てない
+    }
+    let flipdiscs = 0;
+    let oppdisc = this.turn == 2 ? 1:2;
+    for (let v=0; v<VECT.length; v++) {　// 8方向全てについて
+      let vect = VECT[v];
+      
+      let n = p + vect;//vect方向の隣のマス
+      let flip = 0;
+      while(this.bd[n] == oppdisc) {//　連続する相手の意思を
+        n+= vect;
+        flip++;              //カウントする。
+      }
+      if (flip > 0 && this.bd[n] == this.turn) {
+      return true;
+      }
+    }
+    if (flipdiscs　> 0) {
+      this.bd[p] = this.turn;
+      this.SetNextTurn();
+    }
+    return false;
+  }
+  unmove () {
+    if(this.mp <= 0) {
+      return false;
+    }
+    let moveinfo = this.moveinfo[--this.mp];
+    let opp = moveinfo.turn == 1 ? 2: 1;
+    for (let i=0; i<moveinfo.flips; i++) {
+      this.bd[moveinfo.disc[i]] = opp;
+    }
+    this.bd[moveinfo.pos] = 0;
+    this.turn = moveinfo.turn;
+    return true;
+  }
+  
 }
 
 let gBoard = null;
 let gOthello = null;
+
+function unmove () {
+  if (gOthello.unmove ()) {
+    gBoard.update(gOthello);
+  }
+}
 
 function OnClickBoard (pos) {
   let x = pos % 8;
