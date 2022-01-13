@@ -54,9 +54,9 @@ class GBOARD {
 
 class MoveInfo {
   constructor () {
-    this.turn = 0;
-    this.pos = 0;
-    this.flips = 0;
+    this.turn = 0; //手番
+    this.pos = 0;  //打った場所
+    this.flips = 0; //裏返した石の場所 
     this.disc = new Array(20);
   }
   clear() {
@@ -91,6 +91,22 @@ class Othello {
   pos (x, y) {return (y+1) * 9 + x + 1;}
   pos_x(p) {return p % 9 - 1;}
   pos_y(p) {return Math.floor(p / 9) - 1;}
+  
+  init () {
+    for (let y=0; y<8; y++) {
+      for (let x=0; x<8; x++) {
+        this.bd[this.pos(x, y)] = 0;
+      }
+    }
+    this.bd[this.pos(3, 3)] = 1;
+    this.bd[this.pos(4, 3)] = 2;
+    this.bd[this.pos(3, 4)] = 2;
+    this.bd[this.pos(4, 4)] = 1;
+    
+    this.mp = 0;
+    this.mpmax = 0;
+    this.turn = 1;
+  }
   //(x, y)マスの状態を取得する
   get (x, y) {
     return this.bd[this.pos(x, y)];
@@ -192,13 +208,72 @@ class Othello {
     return true;
   }
   
+  forward () {
+    if(this.mp >= this.mpmax) {
+      return false;
+    }
+    let moveinfo = this.moveinfo[this.mp++];
+    let opp = moveinfo.turn == 1 ? 2: 1;
+    
+    for (let i=0; i<moveinfo.flips; i++) {
+      this.bd [moveinfo.disc[i]] = moveinfo.turn;
+    }
+    this.bd[moveinfo.pos] = moveinfo.turn;
+    
+    this.turn = moveinfo.turn;
+    this.SetNextTurn();
+    
+    return true;
+  }
+  
+  unmove_all () {
+    if(!this.unmove()) {
+      return false;
+    }
+    while(this.unmove()) {
+      ;
+    }
+    return true;
+  }
+  forward_all() {
+    if(!this.forward ()) {
+      return false;
+    }
+    while(this.forward()) {
+      ;
+    }
+    return true;
+  }
 }
 
 let gBoard = null;
 let gOthello = null;
 
+function init() {
+  gOthello.init();
+  gBoard.update(gOthello);
+}
+
 function unmove () {
   if (gOthello.unmove ()) {
+    gBoard.update(gOthello);
+  }
+}
+
+function forward () {
+  if(gOthello.forward()) {
+    gBoard.update(gOthello);
+  }
+}
+
+function unmove_all () {
+  if(gOthello.unmove_all()) {
+    gBoard.update(gOthello);
+  }
+}
+
+function forward_all () {
+  if(gOtello.forward_all()) {
     gBoard.update(gOthello);
   }
 }
