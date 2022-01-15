@@ -1,3 +1,12 @@
+function setup() {
+  createCanvas(400, 20);
+  background('white');
+  noLoop();
+  gBoard = new GBOARD("board");
+  gOthello = new Othello();
+  gBoard.update(gOthello);
+}
+var messageArea = document.getElementById("messageArea");
 class GBOARD {
   constructor(parent) {
     this.parent = document.getElementById(parent);
@@ -106,6 +115,7 @@ class Othello {
     this.mp = 0;
     this.mpmax = 0;
     this.turn = 1;
+    
   }
   //(x, y)マスの状態を取得する
   get (x, y) {
@@ -144,13 +154,22 @@ class Othello {
       moveinfo.turn = this.turn;
       this.moveinfo[this.mp++] = moveinfo;
       this.mpmax = this.mp;
-      
       this.SetNextTurn();
     }
     return flipdiscs;
   }
   SetNextTurn () {
+    function messageUpdate(text) {
+    return messageArea.innerHTML = text;
+}
+    messageUpdate("白の番です。");
     this.turn = this.turn == 2 ? 1:2;
+    console.log(this.turn);
+    if (this.turn == 2) {
+      text = messageUpdate;
+    } else {
+      text("黒の番です。");
+    }
     if (this.isPass(this.turn)) {
       this.turn = this.turn == 2 ? 1:2;
       if(this.isPass(this.turn)) {
@@ -249,6 +268,7 @@ class Othello {
 let gBoard = null;
 let gOthello = null;
 
+
 function init() {
   gOthello.init();
   gBoard.update(gOthello);
@@ -285,12 +305,7 @@ function OnClickBoard (pos) {
     gBoard.update(gOthello);
   }
 }
-function setup() {
-  noLoop();
-  gBoard = new GBOARD("board");
-  gOthello = new Othello();
-  gBoard.update(gOthello);
-}
+
 function draw () {
   
 }
